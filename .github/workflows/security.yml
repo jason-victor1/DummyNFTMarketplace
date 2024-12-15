@@ -10,19 +10,23 @@ on:
 
 jobs:
   security:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Install solc
+    - name: Update the system and install snapd
       run: |
         sudo apt update
-        sudo apt install -y solc
+        sudo apt install -y snapd
+
+    - name: Install solc using snap
+      run: |
+        sudo snap install solc --classic
 
     - name: Install Slither
       run: pip install slither-analyzer
 
-    - name: Run Slither
+    - name: Run Slither Analysis
       run: slither .

@@ -17,15 +17,17 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Clear Existing Solc
+    - name: Remove Old Solc Versions
       run: |
-        sudo rm -f /usr/local/bin/solc
         sudo apt-get remove -y solc
+        sudo rm -f /usr/local/bin/solc
+        sudo rm -f /usr/bin/solc
 
-    - name: Install Solc 0.8.28
+    - name: Install Correct Solc Version 0.8.28
       run: |
-        wget https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-v0.8.28 -O /usr/local/bin/solc
-        chmod +x /usr/local/bin/solc
+        wget https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-v0.8.28 -O solc
+        chmod +x solc
+        sudo mv solc /usr/local/bin/solc
         solc --version
 
     - name: Install Slither

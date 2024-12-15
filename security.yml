@@ -10,19 +10,20 @@ on:
 
 jobs:
   security:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Install solc
+    - name: Install solc-select and the correct solc version
       run: |
-        sudo apt update
-        sudo apt install -y software-properties-common
-        sudo add-apt-repository ppa:ethereum/ethereum
-        sudo apt update
-        sudo apt install -y solc
+        sudo apt-get update
+        sudo apt-get install -y software-properties-common
+        sudo add-apt-repository -y ppa:ethereum/ethereum
+        sudo apt-get update
+        sudo apt-get install -y solc
+        wget -qO- https://raw.githubusercontent.com/crytic/solc-select/master/install.sh | bash
         solc-select install 0.8.18
         solc-select use 0.8.18
 

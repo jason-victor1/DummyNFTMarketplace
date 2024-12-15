@@ -5,6 +5,7 @@ on:
     branches:
       - audit-findings
   pull_request:
+    types: [opened, reopened]
     branches:
       - main
 
@@ -13,31 +14,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # Step 1: Checkout Repository
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    # Step 2: Clear Existing Solc
     - name: Clear Existing Solc
       run: |
         sudo rm -f /usr/local/bin/solc
         sudo apt-get remove -y solc
 
-    # Step 3: Install Solc 0.8.28
     - name: Install Solc 0.8.28
       run: |
         wget https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-v0.8.28 -O /usr/local/bin/solc
         chmod +x /usr/local/bin/solc
         solc --version
 
-    # Step 4: Install Slither
     - name: Install Slither
       run: pip install slither-analyzer
 
-    # Step 5: Debug Solc Version
-    - name: Debug Solc Version
-      run: solc --version
-
-    # Step 6: Run Slither Analysis
     - name: Run Slither
       run: slither .

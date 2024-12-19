@@ -16,25 +16,31 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Install Required Tools
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y wget
-
-    - name: Remove existing solc versions
+    # Step 1: Remove conflicting versions of solc
+    - name: Remove conflicting solc versions
       run: |
         sudo apt-get remove --purge -y solc || true
         rm -rf ~/.solc-select || true
+        rm -f /usr/local/bin/solc || true
+        rm -f /snap/bin/solc || true
 
-    - name: Set solc version explicitly
+    # Step 2: Install solc-select and configure correct version
+    - name: Install solc-select and correct solc version
       run: |
-        export PATH=/Library/Frameworks/Python.framework/Versions/3.12/bin:$PATH
-        solc --version  # Verify the correct version is being used
+        wget -qO- https://raw.githubusercontent.com/crytic/solc-select/master/install.sh | bash
+        solc-select install 0.8.28
+        solc-select use 0.8.28
 
+    # Step 3: Verify solc version
+    - name: Verify solc version
+      run: solc --version
+
+    # Step 4: Install Slither
     - name: Install Slither
       run: pip install slither-analyzer
 
-    - name: Run Slither
+    # Step 5: Run Slither analysis
+    - name: Run Slither Analysis
+      env:
+        PATH: ~/.solc-select/bin:$PATH
       run: slither .
-
-      

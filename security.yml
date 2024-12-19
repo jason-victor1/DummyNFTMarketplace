@@ -46,6 +46,18 @@ jobs:
         pip --version
         solc-select versions
 
+    # Additional debug steps
+    - name: Check solc-select path
+      run: |
+        echo "Checking solc-select path..."
+        which solc-select
+        ls -l $(which solc-select)
+    
+    - name: Ensure no other solc binaries exist
+      run: |
+        echo "Checking for other solc binaries..."
+        find / -name solc 2>/dev/null
+
     # Step 5: Install Slither
     - name: Install Slither
       run: pip install slither-analyzer

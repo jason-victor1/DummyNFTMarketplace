@@ -1,0 +1,40 @@
+name: Security Analysis
+
+on:
+  push:
+    branches:
+      - audit-findings
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    - name: Install Required Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y wget
+
+    - name: Remove existing solc versions
+      run: |
+        sudo apt-get remove --purge -y solc || true
+        rm -rf ~/.solc-select || true
+
+    - name: Set solc version explicitly
+      run: |
+        export PATH=/Library/Frameworks/Python.framework/Versions/3.12/bin:$PATH
+        solc --version  # Verify the correct version is being used
+
+    - name: Install Slither
+      run: pip install slither-analyzer
+
+    - name: Run Slither
+      run: slither .
+
+      

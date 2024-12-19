@@ -1,6 +1,8 @@
 # Ignore system files
 .DS_Store
 
+solc-select/
+
 # Ignore node_modules
 node_modules/
 

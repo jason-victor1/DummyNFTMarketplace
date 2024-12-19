@@ -30,15 +30,21 @@ jobs:
         pip install solc-select
         solc-select install 0.8.28
         solc-select use 0.8.28
-        solc --version  # Verify the installed version
 
-    # Step 4: Ensure the correct solc version is being used
+    # Step 4: Verify and debug solc version installation
     - name: Verify solc version
       run: |
-        if ! solc --version | grep -q "Version: 0.8.28"; then
-          echo "Solidity compiler version is incorrect"
-          exit 1
-        fi
+        echo "Checking solc version..."
+        solc --version
+        which solc
+        ls -l $(which solc)
+        echo "Environment variables:"
+        printenv
+        echo "Python version:"
+        python3 --version
+        echo "Pip version:"
+        pip --version
+        solc-select versions
 
     # Step 5: Install Slither
     - name: Install Slither

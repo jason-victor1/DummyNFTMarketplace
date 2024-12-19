@@ -5,16 +5,15 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-contract Marketplace is ReentrancyGuard, Ownable {
+contract Marketplace is Ownable, ReentrancyGuard {
+    using Address for address;
+
     struct Listing {
         address seller;
         uint256 tokenId;
         uint256 price;
         bool isActive;
     }
-
-    mapping(uint256 => Listing) public listings;
-    IERC721 public immutable nftContract; // Updated to 'immutable'
 
     event NFTListed(
         address indexed seller,
@@ -29,64 +28,56 @@ contract Marketplace is ReentrancyGuard, Ownable {
     );
     event FundsWithdrawn(address indexed owner, uint256 amount);
 
+    mapping(uint256 => Listing) public listings;
+    uint256 public nextListingId;
+    IERC721 public nftContract;
+
     constructor(address _nftContract) {
-        nftContract = IERC721(_nftContract); // Set immutable variable in constructor
+        require(_nftContract != address(0), "Invalid NFT contract address");
+        nftContract = IERC721(_nftContract);
     }
 
-    function listNFT(uint256 tokenId, uint256 price) external nonReentrant {
+    function listNFT(uint256 tokenId, uint256 price) external {
         require(price > 0, "Price must be greater than zero");
-        require(
-            nftContract.ownerOf(tokenId) == msg.sender,
-            "You are not the owner"
-        );
-        require(
-            nftContract.isApprovedForAll(msg.sender, address(this)),
-            "Marketplace not approved"
-        );
+        nftContract.safeTransferFrom(msg.sender, address(this), tokenId);
 
-        listings[tokenId] = Listing(msg.sender, tokenId, price, true);
+        listings[nextListingId] = Listing({
+            seller: msg.sender,
+            tokenId: tokenId,
+            price: price,
+            isActive: true
+        });
+
         emit NFTListed(msg.sender, tokenId, price);
+        nextListingId++;
     }
 
-    function buyNFT(uint256 tokenId) external payable nonReentrant {
-        Listing storage listing = listings[tokenId];
+    function buyNFT(uint256 listingId) external payable nonReentrant {
+        Listing storage listing = listings[listingId];
         require(listing.isActive, "Listing is not active");
         require(msg.value == listing.price, "Incorrect price");
 
-        // Update state before external call
         listing.isActive = false;
+        payable(listing.seller).transfer(msg.value);
+        nftContract.safeTransferFrom(
+            address(this),
+            msg.sender,
+            listing.tokenId
+        );
 
-        // Secure payment
-        Address.sendValue(payable(listing.seller), msg.value);
-
-        // Transfer NFT
-        nftContract.safeTransferFrom(listing.seller, msg.sender, tokenId);
-
-        emit NFTBought(msg.sender, listing.seller, tokenId, msg.value);
+        emit NFTBought(
+            msg.sender,
+            listing.seller,
+            listing.tokenId,
+            listing.price
+        );
     }
 
-    function withdraw() external onlyOwner nonReentrant {
+    function withdraw() external onlyOwner {
         uint256 balance = address(this).balance;
         require(balance > 0, "No funds to withdraw");
 
-        // Transfer balance to the contract owner
-        Address.sendValue(payable(owner()), balance);
-
+        payable(owner()).transfer(balance);
         emit FundsWithdrawn(owner(), balance);
     }
-}
-
-interface IERC721 {
-    function ownerOf(uint256 tokenId) external view returns (address);
-
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 tokenId
-    ) external;
-
-    function isApprovedForAll(
-        address owner,
-        address operator
-    ) external view returns (bool);
 }

@@ -5,7 +5,6 @@ on:
     branches:
       - audit-findings
   pull_request:
-    types: [opened, reopened]
     branches:
       - main
 
@@ -14,24 +13,30 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    # Step 1: Checkout the repository
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Remove Old Solc Versions
+    # Step 2: Remove any existing solc installations to prevent conflicts
+    - name: Remove existing solc installations
       run: |
-        sudo apt-get remove -y solc
-        sudo rm -f /usr/local/bin/solc
-        sudo rm -f /usr/bin/solc
+        sudo apt-get remove --purge -y solc || echo "No existing solc to remove"
 
-    - name: Install Correct Solc Version 0.8.28
+    # Step 3: Install solc-select and the required solc version
+    - name: Install solc-select and the correct solc version
       run: |
-        wget https://binaries.soliditylang.org/linux-amd64/solc-linux-amd64-v0.8.28 -O solc
-        chmod +x solc
-        sudo mv solc /usr/local/bin/solc
-        solc --version
+        sudo apt-get update
+        sudo apt-get install -y python3-pip
+        pip install solc-select
+        solc-select install 0.8.28
+        solc-select use 0.8.28
+        solc --version  # Verify the installed version
 
+    # Step 4: Install Slither
     - name: Install Slither
       run: pip install slither-analyzer
 
+    # Step 5: Run Slither for security analysis
     - name: Run Slither
       run: slither .
+      

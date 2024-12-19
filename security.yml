@@ -16,26 +16,31 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    - name: Remove existing solc versions
+    # Step 1: Remove conflicting versions of solc
+    - name: Remove conflicting solc versions
       run: |
         sudo apt-get remove --purge -y solc || true
         rm -rf ~/.solc-select || true
+        rm -f /usr/local/bin/solc || true
+        rm -f /snap/bin/solc || true
 
-    - name: Install solc 0.8.28
+    # Step 2: Install solc-select and configure correct version
+    - name: Install solc-select and correct solc version
       run: |
-        sudo snap install solc --classic
-        sudo snap refresh solc --channel=0.8/stable
-        solc --version
+        wget -qO- https://raw.githubusercontent.com/crytic/solc-select/master/install.sh | bash
+        solc-select install 0.8.28
+        solc-select use 0.8.28
 
-    - name: Check Installed Solc Version
+    # Step 3: Verify solc version
+    - name: Verify solc version
       run: solc --version
 
-    - name: Validate Compilation
-      run: solc --base-path . --include-path node_modules --combined-json abi,bin Marketplace.sol
-
+    # Step 4: Install Slither
     - name: Install Slither
       run: pip install slither-analyzer
 
+    # Step 5: Run Slither analysis
     - name: Run Slither Analysis
-      run: slither . --solc-args "--base-path . --include-path node_modules"
-      
+      env:
+        PATH: ~/.solc-select/bin:$PATH
+      run: slither .

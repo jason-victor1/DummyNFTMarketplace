@@ -21,14 +21,17 @@ jobs:
         sudo apt-get remove --purge -y solc || true
         rm -rf ~/.solc-select || true
 
-    - name: Install specific solc version
+    - name: Install solc 0.8.28
       run: |
         sudo snap install solc --classic
         sudo snap refresh solc --channel=0.8/stable
         solc --version
 
+    - name: Check Installed Solc Version
+      run: solc --version
+
     - name: Validate Compilation
-      run: solc --base-path . --include-path node_modules Marketplace.sol
+      run: solc --base-path . --include-path node_modules --combined-json abi,bin Marketplace.sol
 
     - name: Install Slither
       run: pip install slither-analyzer

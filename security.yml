@@ -17,53 +17,27 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v3
 
-    # Step 2: Remove any existing solc installations to prevent conflicts
-    - name: Remove existing solc installations
+    # Step 2: Use Docker to run the analysis with the correct solc version
+    - name: Run Slither in Docker
       run: |
-        sudo apt-get remove --purge -y solc || echo "No existing solc to remove"
+        docker run --rm -v $(pwd):/src -w /src trailofbits/eth-security-toolbox \
+          bash -c "
+          solc-select install 0.8.28 &&
+          solc-select use 0.8.28 &&
+          solc --version &&
+          pip install slither-analyzer &&
+          slither .
+          "
 
-    # Step 3: Install the correct solc version directly
-    - name: Install solc 0.8.28
+    # Debug steps to verify the environment inside Docker (optional)
+    - name: Debug Docker Environment
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget
-        wget https://github.com/ethereum/solidity/releases/download/v0.8.28/solc-static-linux
-        chmod +x solc-static-linux
-        sudo mv solc-static-linux /usr/local/bin/solc
-        sudo ln -sf /usr/local/bin/solc /usr/bin/solc
-        solc --version  # Verify the installed version
-
-    # Step 4: Verify and debug solc version installation
-    - name: Verify solc version
-      run: |
-        echo "Checking solc version..."
-        solc --version
-        which solc
-        ls -l $(which solc)
-        echo "Environment variables:"
-        printenv
-        echo "Python version:"
-        python3 --version
-        echo "Pip version:"
-        pip --version
-    
-    # Additional debug steps
-    - name: Check solc-select path
-      run: |
-        echo "Checking solc-select path..."
-        which solc-select
-        ls -l $(which solc-select)
-    
-    - name: Ensure no other solc binaries exist
-      run: |
-        echo "Checking for other solc binaries..."
-        find / -name solc 2>/dev/null
-        solc --version  # Verify again after check
-
-    # Step 5: Install Slither
-    - name: Install Slither
-      run: pip install slither-analyzer
-
-    # Step 6: Run Slither for security analysis
-    - name: Run Slither
-      run: slither .
+        docker run --rm -v $(pwd):/src -w /src trailofbits/eth-security-toolbox \
+          bash -c "
+          solc --version &&
+          which solc &&
+          ls -l \$(which solc) &&
+          printenv &&
+          python3 --version &&
+          pip --version
+          "
